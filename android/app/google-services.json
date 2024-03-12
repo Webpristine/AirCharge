@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "950022141408",
+    "project_id": "aircharge-6b02d",
+    "storage_bucket": "aircharge-6b02d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:950022141408:android:decdd985e020ddf64de785",
+        "android_client_info": {
+          "package_name": "com.example.aircharge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0Gn_q5nO4AVw5-vKVD97pIGbnFCzVvU0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
