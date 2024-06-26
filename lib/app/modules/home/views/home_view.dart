@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_null_comparison
 
+import 'dart:io';
+
 import 'package:aircharge/app/core/theme/colors.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
 import 'package:aircharge/app/modules/home/views/multiple_offer_details.dart';
@@ -199,7 +201,7 @@ class ContentWidget extends GetView<HomeController> {
                                       controller.sponserCard.sponsors?[index]
                                               .imageUrl ??
                                           "",
-                                      fit: BoxFit.cover,
+                                      fit: BoxFit.fill,
                                       width: Get.width,
                                     ),
                                     // child: CachedNetworkImage(
@@ -480,20 +482,25 @@ class ContentWidget extends GetView<HomeController> {
                                                         CrossAxisAlignment
                                                             .start,
                                                     children: [
-                                                      Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius.only(
-                                                            topLeft:
-                                                                Radius.circular(
-                                                                    8.0.sp),
-                                                            topRight:
-                                                                Radius.circular(
-                                                                    8.0.sp),
-                                                          ),
-                                                          image: DecorationImage(
-                                                              image: NetworkImage(
+                                                      AspectRatio(
+                                                        aspectRatio: 4 / 3,
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .only(
+                                                              topLeft: Radius
+                                                                  .circular(
+                                                                      8.0.sp),
+                                                              topRight: Radius
+                                                                  .circular(
+                                                                      8.0.sp),
+                                                            ),
+                                                            image:
+                                                                DecorationImage(
+                                                              image:
+                                                                  NetworkImage(
                                                                 // "${offers[index]['image']}"
                                                                 controller
                                                                         .offerCard
@@ -502,10 +509,12 @@ class ContentWidget extends GetView<HomeController> {
                                                                         .offerImage ??
                                                                     "",
                                                               ),
-                                                              fit: BoxFit.fill),
+                                                              fit: BoxFit.cover,
+                                                            ),
+                                                          ),
+                                                          height: 210.h,
+                                                          width: Get.width,
                                                         ),
-                                                        height: 210.h,
-                                                        width: Get.width,
                                                       ),
                                                       Padding(
                                                         padding:
@@ -580,9 +589,11 @@ class ContentWidget extends GetView<HomeController> {
             duration: const Duration(milliseconds: 300),
             // child: const SingleOfferDetails(),
             child: controller.isLoadingSingleOffer.value
-                ? const Center(
+                ? Center(
                     child: CircularProgressIndicator(
-                      color: AppColors.black,
+                      color: Platform.isAndroid
+                          ? AppColors.black
+                          : Colors.transparent,
                     ),
                   ) // Show loading indicator
                 : controller.singleOfferCard == null

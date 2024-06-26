@@ -1,13 +1,8 @@
 // ignore_for_file: non_constant_identifier_names, library_private_types_in_public_api
-import 'package:aircharge/app/core/constants/enums.dart';
-import 'package:aircharge/app/core/theme/colors.dart';
-import 'package:aircharge/app/core/theme/styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
 import 'package:get/get.dart';
-
 import '../controllers/splash_scareen_controller.dart';
 
 class SplashScareenView extends GetView<SplashScareenController> {
@@ -18,100 +13,64 @@ class SplashScareenView extends GetView<SplashScareenController> {
     Get.put(SplashScareenController());
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: 50.h,
-            ),
-            SvgPicture.asset(
-              'assets/images/splash_aircharge_iconlogo.svg',
-              height: 60.h,
-              width: 60.h,
-            ),
-            SizedBox(
-              height: 100.h,
-            ),
-            // Obx(
-            //   () => Transform.translate(
-            //     offset: Offset(0.0, controller.textOffset.value),
-            //     child: Row(
-            //       mainAxisAlignment: MainAxisAlignment.center,
-            //       children: [
-            //         RichText(
-            //           text: TextSpan(
-            //             text: 'air',
-            //             style: Styles.metaRegular(
-            //                 color: AppColors.black,
-            //                 size: 40.sp,
-            //                 font: FontFamily.meta),
-            //           ),
-            //         ),
-            //         RichText(
-            //           text: TextSpan(
-            //             text: 'charge',
-            //             style: Styles.metaBold(
-            //                 color: AppColors.black,
-            //                 size: 40.sp,
-            //                 font: FontFamily.meta),
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // ),
-
-            TweenAnimationBuilder(
-                tween: Tween<double>(begin: 0.0, end: 1.0),
-                duration: Duration(seconds: 1),
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: controller.textOpacity.value * value,
-                    child: Transform.translate(
-                      offset: Offset(0, -50 + (-50 * value)),
-                      child: Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            RichText(
-                              text: TextSpan(
-                                text: 'air',
-                                style: Styles.metaRegular(
-                                    color: AppColors.black,
-                                    size: 40.sp,
-                                    font: FontFamily.meta),
-                              ),
+        child: Padding(
+          padding: EdgeInsets.only(top: 100.h),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset("assets/images/splash_aircharge_iconlogo.svg"),
+              SizedBox(
+                height: 20.h,
+              ),
+              TweenAnimationBuilder(
+                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                  duration: const Duration(seconds: 1),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: controller.textOpacity.value * value,
+                      child: Transform.translate(
+                        offset: Offset(
+                          0,
+                          -50 + (-50 * value),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 0.h),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              height: 250.h,
+                              width: 250.h,
                             ),
-                            RichText(
-                              text: TextSpan(
-                                text: 'charge',
-                                style: Styles.metaBold(
-                                    color: AppColors.black,
-                                    size: 40.sp,
-                                    font: FontFamily.meta),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                      // child: Text(
-                      //   'Your Text Here',
-                      //   style: TextStyle(
-                      //     fontSize: 24.0,
-                      //     fontWeight: FontWeight.bold,
-                      //   ),
-                      // ),
-                    ),
-                  );
-                }),
-            // ),child: SvgPicture.asset(
-            //       'assets/images/splash_aircharge_textlogo.svg',
-            //       height: 40.h,
-            //       width: 40.h,
-          ],
+                    );
+                  }),
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+class A {
+  edition({required int a}) {
+    return a + 1;
+  }
+}
+
+class Bc implements A {
+  @override
+  edition({required int a}) {
+    return a + 2;
+  }
+}
+
+class C implements Bc {
+  @override
+  edition({required int a}) {
+    return a + 3;
   }
 }
 // class TextColorChangeDemo extends StatefulWidget {

@@ -33,12 +33,12 @@ abstract class _BaseApiController {
   void _setupInterceptors() {
     _dio.interceptors.add(
       LogInterceptor(
-        error: true,
-        request: true,
-        requestBody: true,
-        requestHeader: true,
-        responseBody: true,
-        responseHeader: true,
+        error: false,
+        request: false,
+        requestBody: false,
+        requestHeader: false,
+        responseBody: false,
+        responseHeader: false,
       ),
     );
   }
@@ -98,6 +98,12 @@ abstract class _BaseApiController {
     Map<String, dynamic>? query,
     String? deviceId,
   }) async {
+    _dio.interceptors.add(LogInterceptor(
+        request: false,
+        responseBody: false,
+        requestBody: false,
+        requestHeader: false,
+        responseHeader: false));
     try {
       final options = Options(
         headers: {
@@ -122,6 +128,12 @@ abstract class _BaseApiController {
     Map<String, dynamic>? data,
     Map<String, dynamic>? query,
   }) async {
+    _dio.interceptors.add(LogInterceptor(
+        request: false,
+        responseBody: false,
+        requestBody: false,
+        requestHeader: false,
+        responseHeader: false));
     try {
       final response = await _dio.post(
         path,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:aircharge/app/core/theme/buttons.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
 import 'package:aircharge/app/modules/home/controllers/home_controller.dart';
@@ -124,7 +126,7 @@ class SingleOfferDetails extends GetView<HomeController> {
                           ),
                         ),
                         Expanded(
-                          flex: 2,
+                          flex: 4,
                           child: SizedBox(
                             width: 6.w,
                           ),
@@ -139,19 +141,22 @@ class SingleOfferDetails extends GetView<HomeController> {
                     padding: EdgeInsets.symmetric(
                       horizontal: 10.w,
                     ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.sp),
-                        image: DecorationImage(
-                            image: NetworkImage(
-                              // "assets/images/offer_starbucks_promo.png"
-                              controller.singleOfferCard.offer?.offerImage ??
-                                  '',
-                            ),
-                            fit: BoxFit.fill),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.sp),
+                          image: DecorationImage(
+                              image: NetworkImage(
+                                // "assets/images/offer_starbucks_promo.png"
+                                controller.singleOfferCard.offer?.offerImage ??
+                                    '',
+                              ),
+                              fit: BoxFit.cover),
+                        ),
+                        height: Get.height / 4.2.h,
+                        width: Get.width,
                       ),
-                      height: Get.height / 4.2.h,
-                      width: Get.width,
                     ),
                   ),
                   SizedBox(
@@ -205,7 +210,7 @@ class SingleOfferDetails extends GetView<HomeController> {
                     ),
                     child: Visibility(
                       visible:
-                          controller.singleOfferCard.offer?.endDate != null,
+                          controller.singleOfferCard.offer?.endDate == null,
                       child: Text(
                         "Offer ends: ${controller.singleOfferCard.offer?.endDate ?? ''}",
                         style: Styles.interRegular(

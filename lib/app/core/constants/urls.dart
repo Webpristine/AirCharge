@@ -6,11 +6,11 @@ class URLs {
     final environment = EnvServices.environment;
     switch (environment) {
       case Environment.dev:
-        return 'https://webpristine.com/Aircharge/api/';
+        return 'http://34.70.241.7/api/';
       case Environment.stage:
-        return 'https://webpristine.com/Aircharge/api/';
+        return 'http://34.70.241.7/api/';
       case Environment.production:
-        return 'https://webpristine.com/Aircharge/api/';
+        return 'http://34.70.241.7/api/';
     }
   }
 
@@ -24,29 +24,45 @@ abstract class ApiEndPoints {
   static String offerCards(
     double latitude,
     double longitude,
-      int pageNumber,
+    int pageNumber,
     // int pageNumber,
     // int showMarkerMode,
   ) =>
       'offers/$latitude/$longitude/$pageNumber';
   static String singleOfferCards(int id) => 'offer/$id';
   static String multipleOfferCards(int id) => 'multiple_offers/$id';
-  static String findChargesLoctionsList(
-    double latitude,
-    double longitude,
-        int pageNumber,
+  static String findChargesLoctionsList({
+    required double latitude,
+    required double longitude,
+    required int pageNumber,
+    required double secondlatitude,
+    required double secondlongitude,
+  }
 
-    // int dataLimit,
-    // int showMarkerMode,
-  ) =>
-      '/locations/$latitude/$longitude/$pageNumber/';
+          // int dataLimit,
+          // int showMarkerMode,
+          ) =>
+      '/locations/$latitude/$longitude/$pageNumber/${secondlatitude == 0.0 ? 0 : secondlatitude}/${secondlongitude == 0.0 ? 0 : secondlongitude}';
+
+  static String findChargesLoctionsListAll({
+    required double latitude,
+    required double longitude,
+    required int pageNumber,
+    // required double secondlatitude,
+    // required double secondlongitude,
+  }
+
+          // int dataLimit,
+          // int showMarkerMode,
+          ) =>
+      '/map_locations/$latitude/$longitude/$pageNumber';
 
   static String findChargesLoctionsearchList(
     double latitude,
     double longitude,
     // int dataLimit,
     // int showMarkerMode,
-     int pageNumber,
+    int pageNumber,
     dynamic seacrValue,
   ) =>
       '/locations/$latitude/$longitude/$pageNumber/$seacrValue';

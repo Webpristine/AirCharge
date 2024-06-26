@@ -1,5 +1,7 @@
 // ignore_for_file: must_be_immutable
 
+import 'dart:io';
+
 import 'package:aircharge/app/core/theme/buttons.dart';
 import 'package:aircharge/app/core/theme/colors.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
@@ -9,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
   const FindChargesDetailsScreen({super.key});
@@ -31,15 +34,16 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
               bottom: Get.height * 0.126.h,
               left: 12.w,
               right: 12.w,
-              top: 1.h,
+              top: 4.h,
             ),
             child: Container(
               decoration: BoxDecoration(
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: AppColors.iconGreyColor,
-                    offset: Offset(0, 0),
-                  ),
+                      color: AppColors.iconGreyColor.withOpacity(0.3),
+                      offset: Offset(0, 0),
+                      spreadRadius: 1,
+                      blurRadius: 3),
                 ],
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(10.sp),
@@ -47,6 +51,11 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 4.h),
                 child: Column(
+                  // physics: NeverScrollableScrollPhysics(),
+                  // shrinkWrap: true,
+                  // primary: false,
+                  // scrollDirection: Axis.vertical,
+                  // padding: EdgeInsets.zero,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -62,6 +71,8 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
                               onTap: () {
                                 controller.isVisible = true;
                                 controller.isOpened.value = false;
+                                controller.ismapCreated.value = true;
+
                                 controller.animationController.reverse();
                                 controller.update(["visiblePage"]);
                               },
@@ -82,15 +93,17 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
                           ),
                           Expanded(
                             flex: 3,
-                            child: CircleAvatar(
-                              backgroundColor: Colors.transparent,
-                              radius: 18.sp,
-                              child: Image.network(
-                                // "assets/images/starbuckslogo.png",
-                                controller.findChargesDataDetails.location
-                                        ?.brandLogo ??
-                                    "",
-                                fit: BoxFit.contain,
+                            child: InkWell(
+                              child: CircleAvatar(
+                                backgroundColor: Colors.transparent,
+                                radius: 18.sp,
+                                child: Image.network(
+                                  // "assets/images/starbuckslogo.png",
+                                  controller.findChargesDataDetails.location
+                                          ?.brandLogo ??
+                                      "",
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
                             // child: CircleAvatar(
@@ -135,14 +148,14 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
                                   children: [
                                     Icon(
                                       Icons.report_gmailerrorred,
-                                      size: 20.sp,
+                                      size: Platform.isAndroid ? 20.sp : 17.sp,
                                       color: AppColors.red,
                                     ),
                                     Text(
                                       'REPORT',
                                       style: Styles.interRegular(
                                         color: AppColors.red,
-                                        size: 12.sp,
+                                        size: Platform.isAndroid ? 12.sp : 9.sp,
                                       ),
                                     ),
                                   ],
@@ -169,7 +182,7 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
                                         ?.locationImage ??
                                     "",
                               ),
-                              fit: BoxFit.fill),
+                              fit: BoxFit.contain),
                         ),
                         height: Get.height / 4.4.h,
                         width: Get.width,
@@ -184,9 +197,8 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
                         children: [
                           Expanded(
                             child: Text(
-                              // "Starbucks",
                               controller.findChargesDataDetails.location
-                                      ?.brandName ??
+                                      ?.friendlyname ??
                                   "",
                               style: Styles.interBold(
                                 color: AppColors.blackText,
@@ -215,132 +227,115 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
                     SizedBox(
                       height: 4.h,
                     ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                      ),
-                      child: Text(
-                        // "150 Russell sq,\nSouthamton Row London,\nWC1B 5AL, \n2.4 miles",
-                        '${controller.findChargesDataDetails.location?.addressLine1 ?? ''}\n${controller.findChargesDataDetails.location?.addressLine2 ?? ''}\n${controller.findChargesDataDetails.location?.addressLine3 ?? ''}',
+                    // Padding(
+                    //   padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    //   child: Expanded(
+                    //     child: Text(
+                    //       "Starbucks",
+                    //       // controller.findChargesDataDetails.location
+                    //       //         ?.friendlyname ??
+                    //       //     "",
+                    //       style: Styles.interBold(
+                    //         color: AppColors.blackText,
+                    //         size: 15.sp,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    // SizedBox(
+                    //   height: 4.h,
+                    // ),
+                    buildAddressLine(controller
+                        .findChargesDataDetails.location?.addressLine1),
+                    buildAddressLine(controller
+                        .findChargesDataDetails.location?.addressLine2),
 
-                        style: Styles.interLight(
-                          color: AppColors.offerDetailsAddresTextGrey,
-                          size: 13.sp,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                      ),
-                      child: Text(
-                        '${controller.findChargesDataDetails.location?.addressLine2 ?? ''}\n${controller.findChargesDataDetails.location?.addressLine3 ?? ''}',
-                        style: Styles.interLight(
-                          color: AppColors.offerDetailsAddresTextGrey,
-                          size: 13.sp,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                      ),
-                      child: Text(
-                        '${controller.findChargesDataDetails.location?.addressLine3 ?? ''}',
-                        style: Styles.interLight(
-                          color: AppColors.offerDetailsAddresTextGrey,
-                          size: 13.sp,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                      ),
-                      child: Text(
-                        // "150 Russell sq,\nSouthamton Row London,\nWC1B 5AL, \n2.4 miles",
-                        controller.findChargesDataDetails.location?.postcode ??
-                            '',
+                    buildAddressLine(controller
+                        .findChargesDataDetails.location?.addressLine3),
 
-                        style: Styles.interLight(
-                          color: AppColors.offerDetailsAddresTextGrey,
-                          size: 13.sp,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                      ),
-                      child: Text(
-                        // "150 Russell sq,\nSouthamton Row London,\nWC1B 5AL, \n2.4 miles",
-                        '${controller.findChargesDataDetails.location?.distance.toString() ?? ""}',
-                        // settingScreenController
-                        //             .getSettingValues.setting?.distanceUnit ==
-                        //         "Miles"
-                        //     ? "Miles"
-                        //     : "km",
-                        style: Styles.interLight(
-                          color: AppColors.offerDetailsAddresTextGrey,
-                          size: 13.sp,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+                    buildAddressLine(
+                        controller.findChargesDataDetails.location?.postcode),
 
+                    // Padding(
+                    //   padding: EdgeInsets.symmetric(
+                    //     horizontal: 10.w,
+                    //   ),
+                    //   child: Text(
+                    //     // "150 Russell sq,\nSouthamton Row London,\nWC1B 5AL, \n2.4 miles",
+                    //     '${controller.findChargesDataDetails.location?.distance.toString() ?? ""}',
+                    //     // settingScreenController
+                    //     //             .getSettingValues.setting?.distanceUnit ==
+                    //     //         "Miles"
+                    //     //     ? "Miles"
+                    //     //     : "km",
+                    //     style: Styles.interLight(
+                    //       color: AppColors.offerDetailsAddresTextGrey,
+                    //       size: 13.sp,
+                    //     ),
+                    //     maxLines: 1,
+                    //     overflow: TextOverflow.ellipsis,
+                    //   ),
+                    // ),
+                    buildAddressLine(controller
+                        .findChargesDataDetails.location?.distance
+                        .toString()),
                     const Spacer(),
                     Center(
-                      child: Text(
-                        "Google Review Score",
-                        style: Styles.interRegular(
-                          color: AppColors.blackText,
-                          size: 14.sp,
-                        ),
-                        maxLines: 4,
-                      ),
+                      child: controller.findChargesDataDetails.location
+                                  ?.ratingScore !=
+                              0
+                          ? Text(
+                              "Google Review Score",
+                              style: Styles.interRegular(
+                                color: AppColors.blackText,
+                                size: 14.sp,
+                              ),
+                              maxLines: 4,
+                            )
+                          : SizedBox(),
                     ),
                     Center(
-                      child: GestureDetector(
-                        onTap: () async {
-                          String googlePlacesId = controller
-                                  .findChargesDataDetails
-                                  .location
-                                  ?.googlePlacesId ??
-                              "";
-                          String encodedGooglePlacesId =
-                              Uri.encodeComponent(googlePlacesId);
-                          controller.ratingBarBtnLink(
-                              "https://search.google.com/local/reviews?placeid=$encodedGooglePlacesId");
-                        },
-                        child: RatingBar.builder(
-                          initialRating: (controller.findChargesDataDetails
-                                      .location?.ratingScore ??
-                                  0)
-                              .toDouble(),
-                          ignoreGestures: true,
-                          itemCount: 5,
-                          itemPadding:
-                              const EdgeInsets.symmetric(horizontal: 1.0),
-                          itemBuilder: (context, _) => Icon(
-                            Icons.star,
-                            size: 18.sp,
-                            color: AppColors.yellowStarRatingColor,
-                          ),
-                          onRatingUpdate: (rating) {},
-                          allowHalfRating: false,
-                          unratedColor: AppColors.whiteStarRatingColor,
-                        ),
-                      ),
+                      child: controller.findChargesDataDetails.location
+                                  ?.ratingScore !=
+                              0
+                          ? GestureDetector(
+                              onTap: () async {
+                                String googlePlacesId = controller
+                                        .findChargesDataDetails
+                                        .location
+                                        ?.googlePlacesId ??
+                                    "";
+                                String encodedGooglePlacesId =
+                                    Uri.encodeComponent(googlePlacesId);
+                                controller.ratingBarBtnLink(
+                                    "https://search.google.com/local/reviews?placeid=$encodedGooglePlacesId");
+                              },
+                              child: RatingBar.builder(
+                                initialRating: (controller
+                                            .findChargesDataDetails
+                                            .location
+                                            ?.ratingScore ??
+                                        0)
+                                    .toDouble(),
+                                ignoreGestures: true,
+                                itemCount: 5,
+                                itemSize: 22.sp,
+                                itemPadding:
+                                    const EdgeInsets.symmetric(horizontal: 1.0),
+                                itemBuilder: (context, _) => Icon(
+                                  Icons.star,
+                                  // size: 18.sp,
+
+                                  color: AppColors.yellowStarRatingColor,
+                                ),
+                                onRatingUpdate: (rating) {},
+                                allowHalfRating: false,
+                                unratedColor: AppColors.whiteStarRatingColor,
+                              ),
+                            )
+                          : SizedBox(),
                     ),
+
                     // SizedBox(
                     //   height: Get.height / 20.h,
                     // ),
@@ -463,8 +458,13 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
                           // await controller.launchMap(destinationLatitude,
                           //     destinationLongitude, brandName);
 
-                          controller.directionsLink(
-                              'https://www.google.com/maps/dir/?api=1&destination=$destinationLatitude,$destinationLongitude');
+                          if (Platform.isIOS) {
+                            controller.directionsLink(
+                                'https://maps.apple.com/?q=$destinationLatitude,$destinationLongitude');
+                          } else {
+                            controller.directionsLink(
+                                'https://www.google.com/maps/dir/?api=1&destination=$destinationLatitude,$destinationLongitude');
+                          }
                         },
                         height: 60.h,
                         width: Get.width,
@@ -522,5 +522,23 @@ class FindChargesDetailsScreen extends GetView<FindChargesScreenController> {
             ),
           );
         });
+  }
+
+  Widget buildAddressLine(String? addressLine) {
+    if (addressLine != null && addressLine.isNotEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 10.w),
+        child: Text(
+          addressLine,
+          style: Styles.interLight(
+            color: AppColors.offerDetailsAddresTextGrey,
+            size: 13.sp,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      );
+    } else {
+      return SizedBox.shrink();
+    }
   }
 }

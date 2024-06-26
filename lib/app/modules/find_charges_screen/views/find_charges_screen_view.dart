@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:aircharge/app/core/service/loctions_controller.dart';
 import 'package:aircharge/app/core/theme/colors.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
+import 'package:aircharge/app/data/response_dto/loctions_response.dart';
 import 'package:aircharge/app/modules/find_charges_screen/views/comman_listtile.dart';
 import 'package:aircharge/app/modules/find_charges_screen/views/find_charges_details_screen_view.dart';
 import 'package:aircharge/app/modules/find_charges_screen/views/multiple_offer_details.dart';
@@ -12,6 +15,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:should_rebuild/should_rebuild.dart';
 
 import '../controllers/find_charges_screen_controller.dart';
 
@@ -31,6 +35,7 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
       backgroundColor: AppColors.white,
       drawerScrimColor: Colors.transparent,
       body: Stack(
+        fit: StackFit.loose,
         children: [
           Positioned(
             top: controller.isMapViewVisible ? 0.0.h : 84.h,
@@ -38,40 +43,126 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
               () => Visibility(
                 visible: controller.isMapViewVisible,
                 replacement: SizedBox(
-                  height: Get.height,
-                  width: Get.width,
-                  child: Obx(
-                    () => Visibility(
-                      visible: controller.isVisible,
-                      child: GoogleMap(
-                        myLocationEnabled: false,
-                        compassEnabled: false,
-                        onTap: (position) {
-                          controller
-                              .customInfoWindowController.hideInfoWindow!();
-                        },
-                        onCameraMove: (position) {
-                          controller.customInfoWindowController.onCameraMove!();
-                        },
-                        markers: controller.mapMarker.toSet(),
-                        onMapCreated: (mapController) {
-                          controller.googleMapController = mapController;
-                          mapController
-                              .moveCamera(CameraUpdate.scrollBy(10, 170));
-                          controller.customInfoWindowController
-                              .googleMapController = mapController;
-                        },
-                        initialCameraPosition: CameraPosition(
-                          target: LatLng(
-                            locationController.latitude.value!,
-                            locationController.longitude.value!,
-                          ),
-                          zoom: 15.0,
-                        ),
+                    height: Get.height,
+                    width: Get.width,
+                    child: Obx(
+                      () => Visibility(
+                        visible: controller.isVisible,
+                        child: controller.isMapListViewVisible
+                            ? GoogleMap(
+                                // padding: EdgeInsets.only(
+                                //   bottom: 100.h,
+                                // ),
+                                myLocationEnabled: false,
+                                compassEnabled: false,
+                                onTap: (position) {
+                                  //                 print("Drag Ended");
+
+                                  controller.customInfoWindowController
+                                      .hideInfoWindow!();
+                                },
+                                onCameraMove: (position) {
+                                  controller.customInfoWindowController
+                                      .onCameraMove!();
+                                  // controller.manager.onCameraMove(position);
+                                },
+                                // onCameraIdle: controller.manager.updateMap,
+                                markers: controller.mapMarker.toSet(),
+                                onMapCreated: (mapController) {
+                                  // controller.manager
+                                  //     .setMapId(mapController.mapId);
+
+                                  if (!controller.ismapCreated.value) {
+                                    controller.googleMapController =
+                                        mapController;
+                                    if (controller
+                                            .placedetails.value.latitude !=
+                                        0) {
+                                      mapController.moveCamera(
+                                        CameraUpdate.scrollBy(10, 170),
+                                      );
+                                      mapController.moveCamera(
+                                        CameraUpdate.newLatLng(
+                                          LatLng(
+                                              controller
+                                                  .placedetails.value.latitude,
+                                              controller.placedetails.value
+                                                  .longitude),
+                                        ),
+                                      );
+                                    }
+                                    mapController.moveCamera(
+                                      CameraUpdate.scrollBy(10, 170),
+                                    );
+                                  } else {
+                                    if (controller
+                                            .placedetails.value.latitude !=
+                                        0) {
+                                      mapController.moveCamera(
+                                        CameraUpdate.scrollBy(10, 170),
+                                      );
+                                      mapController.moveCamera(
+                                        CameraUpdate.newLatLng(
+                                          LatLng(
+                                              controller
+                                                  .placedetails.value.latitude,
+                                              controller.placedetails.value
+                                                  .longitude),
+                                        ),
+                                      );
+                                    } else {
+                                      mapController.animateCamera(
+                                        CameraUpdate.newCameraPosition(
+                                          CameraPosition(
+                                              target: LatLng(
+                                                locationController
+                                                        .latitude.value! -
+                                                    0.007,
+                                                locationController
+                                                        .longitude.value! -
+                                                    0.00001,
+                                              ),
+                                              zoom: 15),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                  if (controller.placedetails.value.latitude !=
+                                      0) {
+                                    mapController.moveCamera(
+                                      CameraUpdate.scrollBy(10, 170),
+                                    );
+                                    mapController.moveCamera(
+                                      CameraUpdate.newLatLng(
+                                        LatLng(
+                                            controller
+                                                .placedetails.value.latitude,
+                                            controller
+                                                .placedetails.value.longitude),
+                                      ),
+                                    );
+                                  }
+
+                                  controller.ismapCreated = true.obs;
+                                  controller.customInfoWindowController
+                                      .googleMapController = mapController;
+                                },
+                                initialCameraPosition: CameraPosition(
+                                  target: LatLng(
+                                    locationController.latitude.value!,
+                                    locationController.longitude.value!,
+                                  ),
+                                  zoom: 15.0,
+                                ),
+                              )
+                            : Padding(
+                                padding:
+                                    EdgeInsets.symmetric(horizontal: 12.w) +
+                                        EdgeInsets.only(top: 110.h),
+                                child: addresssuggestions(),
+                              ),
                       ),
-                    ),
-                  ),
-                ),
+                    )),
                 child: Container(
                   height: Get.height,
                   width: Get.width,
@@ -107,75 +198,105 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
                         borderRadius: BorderRadius.circular(8.sp),
                       ),
                       padding: EdgeInsets.only(left: 14.w),
-                      child: TextFormField(
-                        controller: controller.searchTextEditingController,
-                        onTap: () async {
-                          if (!controller.isMapViewVisible) {
-                            controller.googleMapController!.animateCamera(
-                                CameraUpdate.newCameraPosition(CameraPosition(
-                                    tilt: 20,
-                                    target: LatLng(
-                                      locationController.latitude.value!,
-                                      locationController.longitude.value!,
+                      child: Form(
+                          key: controller.formkey,
+                          child: GetBuilder<FindChargesScreenController>(
+                              builder: (context) {
+                            return TextFormField(
+                              controller:
+                                  controller.searchTextEditingController,
+                              onTap: () async {
+                                if (!controller.isMapViewVisible) {
+                                  controller.googleMapController!.animateCamera(
+                                    CameraUpdate.newCameraPosition(
+                                      CameraPosition(
+                                          tilt: 20,
+                                          target: LatLng(
+                                            locationController.latitude.value!,
+                                            locationController.longitude.value!,
+                                          ),
+                                          zoom: 15),
                                     ),
-                                    zoom: 15)));
-                          }
-                        },
-                        onChanged: (searchValue) async {
-                          if (searchValue.isEmpty) {
-                            controller.searchResults.clear();
-                            controller.searchResults
-                                .addAll(controller.locations);
-                            // controller.isSearchempty.value = false ;
-                          } else {
-                            await controller
-                                .getFindChargesListLoctionSearchsList(
-                              latitude: controller
-                                      .locationController.latitude.value ??
-                                  0.0,
-                              longitude: controller
-                                      .locationController.longitude.value ??
-                                  0.0,
-                              // showMarkerMode: 0,
-                              pageNumber: controller.pageSize,
-                              seacrhValue: searchValue,
+                                  );
+                                }
+                              },
+                              onChanged: (searchValue) async {
+                                if (searchValue.isEmpty) {
+                                  controller.searchResults.clear();
+                                  controller.searchResults
+                                      .addAll(controller.locations);
+                                  // controller.isSearchempty.value = false ;
+                                } else {
+                                  controller.fetchSuggestions(searchValue);
+                                  controller.isListViewVisible = false;
+                                  // if (controller.isMapViewVisible) {z
+                                  controller.isMapListViewVisible = false;
+                                  // }
+                                  // await controller
+                                  //     .getFindChargesListLoctionSearchsList(
+                                  //   latitude: controller
+                                  //           .locationController.latitude.value ??
+                                  //       0.0,
+                                  //   longitude: controller
+                                  //           .locationController.longitude.value ??
+                                  //       0.0,
+                                  //   // showMarkerMode: 0,
+                                  //   pageNumber: controller.pageSize,
+                                  //   seacrhValue: searchValue,
+                                  // );
+                                }
+                                controller.update();
+                              },
+                              expands: false,
+                              autofocus: false,
+                              cursorColor: AppColors.iconGreyColor,
+                              decoration: InputDecoration(
+                                prefixIcon: const ImageIcon(
+                                  AssetImage(
+                                    "assets/images/search.png",
+                                  ),
+                                ),
+                                prefixIconConstraints:
+                                    BoxConstraints(maxWidth: 30.sp),
+                                prefixIconColor: AppColors.iconGreyColor,
+                                hintText: ' Search Public Charging Locations',
+                                hintStyle: Styles.interRegular(
+                                    size: 14.sp,
+                                    color: AppColors.iconGreyColor),
+                                helperStyle:
+                                    const TextStyle(color: AppColors.grey),
+                                fillColor: AppColors.white,
+                                filled: true,
+                                suffixIcon:
+                                    controller.selectedaddress.value != ""
+                                        ? InkWell(
+                                            onTap: () {
+                                              controller
+                                                  .currentLoctionOnTapFunctions();
+                                            },
+                                            child: const Icon(
+                                              Icons.close,
+                                              color: AppColors.iconGreyColor,
+                                            ),
+                                          )
+                                        : SizedBox(),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.fromLTRB(
+                                    20.0.w, 10.0..h, 20.0.w, 10.0.h),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.0.sp),
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 3.0),
+                                ),
+                              ),
                             );
-                          }
-                          controller.update();
-                        },
-                        expands: false,
-                        autofocus: false,
-                        cursorColor: AppColors.iconGreyColor,
-                        decoration: InputDecoration(
-                          prefixIcon: const ImageIcon(
-                            AssetImage(
-                              "assets/images/search.png",
-                            ),
-                          ),
-                          prefixIconConstraints:
-                              BoxConstraints(maxWidth: 30.sp),
-                          prefixIconColor: AppColors.iconGreyColor,
-                          hintText: 'Search Public Charging Locations',
-                          hintStyle: Styles.interRegular(
-                              size: 14.sp, color: AppColors.iconGreyColor),
-                          helperStyle: const TextStyle(color: AppColors.grey),
-                          fillColor: AppColors.white,
-                          filled: true,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.fromLTRB(
-                              20.0.w, 10.0..h, 20.0.w, 10.0.h),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0.sp),
-                            borderSide: const BorderSide(
-                                color: Colors.white, width: 3.0),
-                          ),
-                        ),
-                      ),
+                          })),
                     ),
                   ),
                 ),
               ),
               Stack(
+                fit: StackFit.loose,
                 children: [
                   Container(
                     width: double.infinity,
@@ -313,13 +434,17 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
                           child: Column(
                             children: [
                               const Spacer(),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 12.w),
-                                child: SizedBox(
-                                  height: (Get.height * 0.08.h * 3) + 20.h,
-                                  child: listViewWidget(),
-                                ),
-                              ),
+                              controller.isMapListViewVisible
+                                  ? Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12.w),
+                                      child: SizedBox(
+                                        height:
+                                            (Get.height * 0.08.h * 3) + 20.h,
+                                        child: listViewWidget(),
+                                      ),
+                                    )
+                                  : SizedBox(),
                               SizedBox(height: 76.h + 10)
                             ],
                           ),
@@ -330,9 +455,16 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
                       () => Visibility(
                         visible: controller.isVisible,
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          child: listViewWidget(),
-                        ),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            child: controller.isListViewVisible
+                                ? listViewWidget()
+                                : controller.isLoading.value
+                                    ? const Center(
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.black,
+                                        ),
+                                      )
+                                    : addresssuggestions()),
                       ),
                     ),
                   ),
@@ -424,8 +556,103 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
     );
   }
 
-  Widget listViewWidget(//   bool displayAllItems,
-      ) {
+  Widget addresssuggestions() {
+    return ListView.builder(
+      itemCount: controller.locationSuggestionsData.predictions!.length,
+      padding: EdgeInsets.zero,
+      itemBuilder: (context, index) {
+        return InkWell(
+          onTap: () {
+            controller.getPlaceLatLng(
+                controller.locationSuggestionsData.predictions!
+                    .elementAt(index)
+                    .placeId,
+                context);
+          },
+          child: Card(
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.sp),
+              ),
+              child: Container(
+                color: AppColors.white,
+                height: Get.height * 0.08.h,
+                padding: EdgeInsets.only(
+                    top: 4.0.h, left: 10.0.w, right: 10.0.w, bottom: 4.0.h),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      maxRadius: 20.sp,
+
+                      backgroundColor: Colors.black,
+                      // backgroundImage: NetworkImage(
+                      //   img!,
+                      // ),
+                      // foregroundImage: NetworkImage(
+                      //   img!,
+                      // ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset(
+                          "assets/images/charger-loc-pin.png",
+                          fit: BoxFit.fill,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 6.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          SizedBox(
+                            width: Get.width / 1.4.w,
+                            child: Text(
+                              controller.locationSuggestionsData.predictions!
+                                  .elementAt(index)
+                                  .structuredFormatting
+                                  .mainText,
+                              style: Styles.interBold(
+                                color: AppColors.blackText,
+                                size: 15.sp,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // SizedBox(
+                          //   height: 1.h,
+                          // ),
+                          SizedBox(
+                            width: Get.width / 1.4.w,
+                            child: Text(
+                              controller.locationSuggestionsData.predictions!
+                                  .elementAt(index)
+                                  .structuredFormatting
+                                  .secondaryText,
+                              style: Styles.interRegular(
+                                color: AppColors.iconGreyColor,
+                                size: 13.sp,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // SizedBox(
+                          //   height: 1.h,
+                          // ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        );
+      },
+    );
+  }
+
+  Widget listViewWidget() {
     return SizedBox(
       height: Get.height,
       width: Get.width,
@@ -450,6 +677,7 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
                 return false;
               },
               child: ListView.builder(
+
                   // reverse: true,
                   padding: EdgeInsets.only(
                     top: 0.h,
@@ -463,14 +691,14 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
                     if (index == controller.searchResults.length) {
                       if (!controller.isSearchempty.value) {
                         return controller.isMoreLoading.value
-                            ? Center(
+                            ? const Center(
                                 child: CircularProgressIndicator(
                                   color: AppColors.black,
                                 ),
                               )
-                            : SizedBox();
+                            : const SizedBox();
                       } else {
-                        return SizedBox();
+                        return const SizedBox();
                       }
                     } else {
                       var location = controller.searchResults[index];
@@ -482,38 +710,41 @@ class FindChargesScreenView extends GetView<FindChargesScreenController> {
                         child: GetBuilder<FindChargesScreenController>(
                           id: "visiblePage",
                           builder: (cont) => GestureDetector(
-                              onTap: () async {
-                                try {
-                                  await controller
-                                      .getFindChargesListLoctionsDetails(
-                                    id: location.locationId ?? 0,
-                                    latitude: controller.locationController
-                                            .latitude.value ??
-                                        0.0,
-                                    longitude: controller.locationController
-                                            .longitude.value ??
+                            onTap: () async {
+                              try {
+                                FocusScope.of(context).unfocus();
+
+                                await controller
+                                    .getFindChargesListLoctionsDetails(
+                                  id: location.locationId ?? 0,
+                                  latitude: controller
+                                          .locationController.latitude.value ??
+                                      0.0,
+                                  longitude: controller
+                                          .locationController.longitude.value ??
 // =======
-                                        // .latitude
-                                        // .value ??
-                                        0.0,
+                                      // .latitude
+                                      // .value ??
+                                      0.0,
 //                                           longitude: controller
 //                                                   .locationController
 //                                                   .longitude
 //                                                   .value ??
 // >>>>>>> Stashed changes
-                                    //   0.0
-                                  );
-                                  controller.loctiondetailsAnimation();
-                                } catch (e) {
-                                  print("Error: $e");
-                                }
-                              },
-                              child: CommanListTile(
-                                img: location.logoUrl ?? "",
-                                title: location.brandName ?? "",
-                                subTitle: location.friendlyName ?? "",
-                                thirdTitle: location.distance ?? 0.0,
-                              )),
+                                  //   0.0
+                                );
+                                controller.loctiondetailsAnimation();
+                              } catch (e) {
+                                print("Error: $e");
+                              }
+                            },
+                            child: CommanListTile(
+                              img: location.logoUrl ?? "",
+                              title: location.brandName ?? "",
+                              subTitle: location.friendlyName ?? "",
+                              thirdTitle: location.distance ?? 0.0,
+                            ),
+                          ),
                         ),
                       );
                     }

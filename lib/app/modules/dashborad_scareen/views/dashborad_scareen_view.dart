@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:io';
+
 import 'package:aircharge/app/core/constants/enums.dart';
 import 'package:aircharge/app/core/theme/colors.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
@@ -59,56 +61,46 @@ class DashboradScareenView extends GetView<DashboradScareenController> {
           ],
         ),
       ),
-      body: CustomScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        slivers: [
-          SliverAppBar(
-            centerTitle: true,
-            automaticallyImplyLeading: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      text: 'air',
-                      style: Styles.metaRegular(
-                          color: AppColors.lightBlack,
-                          size: 22.sp,
-                          font: FontFamily.meta),
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              pinned: true,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/logo.png',
                     ),
-                  ),
-                  RichText(
-                    text: TextSpan(
-                      text: 'charge',
-                      style: Styles.metaBold(
-                          color: AppColors.lightBlack,
-                          size: 22.sp,
-                          font: FontFamily.meta),
-                    ),
-                  ),
-                  // SizedBox(
-                  //   width: 60.w,
-                  // ),
-                ],
-              ),
-              background: Container(
-                color: AppColors.white,
+                    Platform.isAndroid
+                        ? SizedBox(
+                            width: 60.w,
+                          )
+                        : SizedBox(),
+                  ],
+                ),
+                background: Container(
+                  color: AppColors.white,
+                ),
               ),
             ),
-          ),
-          SliverFillRemaining(
-            child: GetBuilder<DashboradScareenController>(
-              id: "screen",
-              builder: (cont) => Stack(
-                children: [
-                  cont.currentScreen,
-                ],
+            SliverFillRemaining(
+              child: GetBuilder<DashboradScareenController>(
+                id: "screen",
+                builder: (cont) => Stack(
+                  children: [
+                    cont.currentScreen,
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

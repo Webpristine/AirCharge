@@ -8,6 +8,7 @@ import 'package:aircharge/app/data/repostorys/api_repostory.dart';
 import 'package:aircharge/app/data/request_dto/setting-request.dart';
 import 'package:aircharge/app/data/response_dto/settings_response.dart';
 import 'package:aircharge/app/modules/find_charges_screen/controllers/find_charges_screen_controller.dart';
+import 'package:aircharge/main.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -198,6 +199,7 @@ class SettingScreenController extends GetxController {
   Future<void> getSetting(String deviceId, {String? fcmtoken}) async {
     try {
       getSettingValues = await _apiRepostory.getSetting(deviceId);
+
       debugPrint('>>>> [DEBUG] getSettingValues : $getSettingValues');
       sliderValue.value =
           getSettingValues.setting!.batteryPercentageAlertThreshold!.toDouble();

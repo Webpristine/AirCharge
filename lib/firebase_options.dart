@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '950022141408',
     projectId: 'aircharge-6b02d',
     storageBucket: 'aircharge-6b02d.appspot.com',
-    iosBundleId: 'com.example.aircharge',
+    iosBundleId: 'com.company.aircharge',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,6 +76,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '950022141408',
     projectId: 'aircharge-6b02d',
     storageBucket: 'aircharge-6b02d.appspot.com',
-    iosBundleId: 'com.example.aircharge.RunnerTests',
+    iosBundleId: 'com.company.aircharge.RunnerTests',
   );
 }

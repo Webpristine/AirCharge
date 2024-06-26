@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:aircharge/app/core/theme/colors.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
 import 'package:aircharge/app/modules/home/controllers/home_controller.dart';
@@ -101,7 +103,7 @@ class MultipleOffers extends GetView<HomeController> {
                         ),
                       ),
                       Expanded(
-                        flex: 2,
+                        flex: 4,
                         child: SizedBox(
                           width: 6.w,
                         ),
@@ -110,6 +112,7 @@ class MultipleOffers extends GetView<HomeController> {
                   ),
                   Expanded(
                     child: ListView.builder(
+                      padding: EdgeInsets.all(2.sp),
                       itemCount:
                           controller.multipleOfferCard.offers?.length ?? 0,
                       // itemCount: 4,
@@ -147,21 +150,24 @@ class MultipleOffers extends GetView<HomeController> {
                                       children: [
                                         Expanded(
                                           flex: 1,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                                image: DecorationImage(
-                                                  fit: BoxFit.fill,
-                                                  image: NetworkImage(
-                                                      // "assets/images/firstoffer.png",
-                                                      controller
-                                                              .multipleOfferCard
-                                                              .offers?[index]
-                                                              .offerImage ??
-                                                          ""),
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        8.sp)),
+                                          child: AspectRatio(
+                                            aspectRatio: 4 / 3,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                  image: DecorationImage(
+                                                    fit: BoxFit.cover,
+                                                    image: NetworkImage(
+                                                        // "assets/images/firstoffer.png",
+                                                        controller
+                                                                .multipleOfferCard
+                                                                .offers?[index]
+                                                                .offerImage ??
+                                                            ""),
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          8.sp)),
+                                            ),
                                           ),
                                         ),
                                         Expanded(
@@ -212,11 +218,19 @@ class MultipleOffers extends GetView<HomeController> {
                                                 ),
                                                 Expanded(
                                                   flex: 1,
-                                                  child: Text(
-                                                    "offer ends:${controller.multipleOfferCard.offers?[index].endDate ?? ""} ",
-                                                    style: Styles.interRegular(
-                                                      color: AppColors.black,
-                                                      size: 9.sp,
+                                                  child: Visibility(
+                                                    visible: controller
+                                                            .multipleOfferCard
+                                                            .offers?[index]
+                                                            .endDate ==
+                                                        null,
+                                                    child: Text(
+                                                      "offer ends:${controller.multipleOfferCard.offers?[index].endDate ?? ""} ",
+                                                      style:
+                                                          Styles.interRegular(
+                                                        color: AppColors.black,
+                                                        size: 9.sp,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),

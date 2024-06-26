@@ -2,8 +2,14 @@
 // ignore_for_file: deprecated_member_use, library_prefixes
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:ffi';
 import 'dart:ui' as ui;
+import 'dart:ui';
+import 'package:aircharge/app/data/response_dto/local_locations_response.dart'
+    as LL;
+import 'package:http/http.dart' as client;
 
 import 'package:aircharge/app/core/service/loctions_controller.dart';
 import 'package:aircharge/app/core/service/loctions_services.dart';
@@ -30,7 +36,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_google_maps_webservices/places.dart' as ws;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -38,20 +44,37 @@ import 'package:location/location.dart' as loc;
 import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../data/response_dto/locationsuggestions.dart';
+
 class FindChargesScreenController extends GetxController
     with GetTickerProviderStateMixin {
   late ApiRepostory _apiRepostory;
+  final formkey = GlobalKey<FormState>();
 
   FocusNode cardFocus = FocusNode();
   late final AnimationController listFadeController;
 
   final RxBool isTextFieldSelected = false.obs;
+  RxBool ismapCreated = false.obs;
+
   final GlobalKey focusKey = GlobalKey();
 
   final LocationController locationController = Get.find<LocationController>();
 
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{}.obs;
-  Set<Marker> mapMarker = <Marker>{}.obs;
+  RxSet<Marker> mapMarker = <Marker>{}.obs;
+
+  Future<BitmapDescriptor> createCustomMarkerBitmap(context) async {
+    // String _iconImage = 'assets/images/' + bla['q'].toString() + '.png';
+    String imagePath = "assets/images/current-location.svg";
+    // final bitmapIcon = await BitmapDescriptor.fromAsset(_iconImage);
+    ImageConfiguration configuration = createLocalImageConfiguration(context);
+    BitmapDescriptor bitmapDescriptor = await BitmapDescriptor.fromAssetImage(
+      configuration,
+      imagePath,
+    );
+    return bitmapDescriptor;
+  }
 
   // final List<Uint8List> _markersList = [];
   String? token; // fcmtoken
@@ -72,8 +95,8 @@ class FindChargesScreenController extends GetxController
               '>>>> [DEBUG] Message also contained a notification: ${message.notification}');
         }
       });
-      FirebaseMessaging.onBackgroundMessage(
-          _firebaseMessagingBackgroundHandler);
+      // FirebaseMessaging.onBackgroundMessage(
+      //     _firebaseMessagingBackgroundHandler);
     } else {}
     if (kDebugMode) {
       print('>>>> [DEBUG] Permission granted: ${settings.authorizationStatus}');
@@ -86,7 +109,7 @@ class FindChargesScreenController extends GetxController
 
   Future<void> _firebaseMessagingBackgroundHandler(
       RemoteMessage message) async {
-    // If you're going to use other Firebase services in the background, such as Firestore,
+    // If you're going to use other Firebase services in the background, such as Firestore..
     // make sure you call `initializeApp` before using other Firebase services.
     // await Firebase.initializeApp();
 
@@ -129,8 +152,8 @@ class FindChargesScreenController extends GetxController
       batteryPercentageValues = await _apiRepostory.battery(
           requestDTO: BatteryPercentageRequestDto(
         deviceId: DeviceInfoUtil.deviceInfo,
-        latitude: locationController.latitude.value.toString() ?? '',
-        longitude: locationController.longitude.value.toString() ?? '',
+        latitude: locationController.latitude.value.toString(),
+        longitude: locationController.longitude.value.toString(),
         batteryPercentage: batteryLevel.toString(),
       ));
       debugPrint('>>>> [DEBUG] batteryLevel : ${DeviceInfoUtil.deviceInfo}');
@@ -149,6 +172,10 @@ class FindChargesScreenController extends GetxController
   Future<void> onInit() async {
     super.onInit();
     await initializeFCM();
+    animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
 
     // final SettingScreenController settingController =
     // Get.find<SettingScreenController>();
@@ -181,6 +208,8 @@ class FindChargesScreenController extends GetxController
           '>>>> [DEBUG] location is Latitude: ${locationController.latitude.value}, Longitude: ${locationController.longitude.value}');
       await getFindChargesListLoctionsList(
         latitude: locationController.latitude.value ?? 0.0,
+        secondlatitude: placedetails.value.latitude,
+        secondlongitude: placedetails.value.longitude,
         longitude: locationController.longitude.value ?? 0.0,
         // showMarkerMode:
         //     settingController.getSettingValues.setting?.showMarkerMode == false
@@ -188,15 +217,10 @@ class FindChargesScreenController extends GetxController
         //         : 1,
         pageNumber: pageSize,
       );
+
       await getFindChargesListLoctionsListForMap(
-        latitude: locationController.latitude.value ?? 0.0,
-        longitude: locationController.longitude.value ?? 0.0,
-        // showMarkerMode:
-        //     settingController.getSettingValues.setting?.showMarkerMode == false
-        //         ? 0
-        //         : 1,
-        pageNumber: mapPageSize,
-      );
+          lat: locationController.latitude.value ?? 0,
+          long: locationController.longitude.value ?? 0);
     } else {
       debugPrint(
           '>>>> [DEBUG] location is Latitude: ${locationController.latitude.value}, Longitude: ${locationController.longitude.value}');
@@ -234,10 +258,6 @@ class FindChargesScreenController extends GetxController
     });
     updateBatteryLevel();
     getBatteryPercentage();
-    animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
 
     reportAnimationController = AnimationController(
       vsync: this,
@@ -256,156 +276,52 @@ class FindChargesScreenController extends GetxController
     //   ["searchbar"],
     // );
     _getUserLocation();
-// Current Location Marker
-    markers = <MarkerId, Marker>{};
     final Uint8List markerIcon =
-        await getBytesFromAsset('assets/images/marker-loc-pin.png', 80);
+        await getBytesFromAsset('assets/images/current-location.png', 100);
     final bitmapIcon = BitmapDescriptor.fromBytes(
         // const ImageConfiguration(size: Size(4, 4)),
         markerIcon);
     final Marker marker = Marker(
-      markerId: MarkerId("CurrentLocation"),
-      icon: BitmapDescriptor.defaultMarker,
-      position: LatLng(locationController.latitude.value!,
-          locationController.longitude.value!),
+      markerId: const MarkerId("CurrentLocation"),
+      icon: bitmapIcon,
+      consumeTapEvents: true,
+      // onTap: () {
+
+      //   googleMapController!.animateCamera(
+      //     CameraUpdate.newCameraPosition(
+      //       CameraPosition(
+      //         zoom: 15,
+      //         target: LatLng(
+      //           locationController.latitude.value!,
+      //           locationController.longitude.value!,
+      //         ),
+      //       ),
+      //     ),
+      //   );
+      // },
+      position: LatLng(
+        locationController.latitude.value!,
+        locationController.longitude.value!,
+      ),
     );
 
-    mapMarker.add(markers[MarkerId("CurrentLocation")] = marker).obs;
+    mapMarker.add(markers[const MarkerId("CurrentLocation")] = marker).obs;
   }
 
-//   @override
-//   Future<void> onInit() async {
-//     super.onInit();
-//     await initializeFCM();
-
-//     // final SettingScreenController settingController =
-//     // Get.find<SettingScreenController>();
-
-//     scrollController.addListener(_onScroll);
-
-//     // scrollController.addListener(() {
-//     //   if (scrollController.position.pixels ==
-//     //       scrollController.position.maxScrollExtent) {
-//     //          getFindChargesListLoctionsList(
-//     //     latitude: locationController.userLocation.value?.latitude ?? 0.0,
-//     //     longitude: locationController.userLocation.value?.longitude ?? 0.0,
-//     //     // showMarkerMode:
-//     //     //     settingController.getSettingValues.setting?.showMarkerMode == false
-//     //     //         ? 0
-//     //     //         : 1,
-//     //     pageNumber: pageSize ~/ 20+1,
-//     //   );
-//     //     // fetchLocations(locations.length ~/ 20 + 1);
-//     //   }
-//     // });
-//     // loadMoreData();
-//     _apiRepostory = ApiRepostory(apiControllerV1: Get.find<ApiControllerV1>());
-//     await LocationService.instance
-//         .getUserLocation(controller: locationController);
-
-//     if (locationController.userLocation.value!.latitude != null &&
-//         locationController.userLocation.value!.longitude != null) {
-//       debugPrint(
-//           '>>>> [DEBUG] location is Latitude: ${locationController.userLocation.value?.latitude}, Longitude: ${locationController.userLocation.value?.longitude}');
-//       await getFindChargesListLoctionsList(
-//         latitude: locationController.userLocation.value?.latitude ?? 0.0,
-//         longitude: locationController.userLocation.value?.longitude ?? 0.0,
-//         // showMarkerMode:
-//         //     settingController.getSettingValues.setting?.showMarkerMode == false
-//         //         ? 0
-//         //         : 1,
-//         pageNumber: pageSize,
-//       );
-//       await getFindChargesListLoctionsListForMap(
-//         latitude: locationController.userLocation.value?.latitude ?? 0.0,
-//         longitude: locationController.userLocation.value?.longitude ?? 0.0,
-//         // showMarkerMode:
-//         //     settingController.getSettingValues.setting?.showMarkerMode == false
-//         //         ? 0
-//         //         : 1,
-//         pageNumber: mapPageSize,
-//       );
-//     } else {
-//       debugPrint(
-//           '>>>> [DEBUG] location is Latitude: ${locationController.userLocation.value?.latitude}, Longitude: ${locationController.userLocation.value?.longitude}');
-//     }
-//     debugPrint(
-//         'Latitude: ${locationController.userLocation.value?.latitude}, Longitude: ${locationController.userLocation.value?.longitude}');
-//     // _markersList.add(await _loadSvgAsBitmap(1));
-//     // _markersList.add(await _loadSvgAsBitmap(2));
-//     // debugPrint('>>>> [DEBUG] markers list is  ${_markersList.length}');
-//     // scrollController.addListener(() {
-//     //   if (scrollController.position.pixels ==
-//     //       scrollController.position.maxScrollExtent) {
-//     //     // User has reached the end of the list, load more data
-//     //     if (!hasMorePages.value) {
-//     //       hasMorePages.value = true;
-//     //       getFindChargesListLoctionsList(
-//     //         // id: findChargesData.locations?.last.locationId ?? 0,
-//     //         latitude: locationController.userLocation.value?.latitude ?? 0.0,
-//     //         longitude: locationController.userLocation.value?.longitude ?? 0.0,
-//     //         // showMarkerMode: 2,
-//     //       );
-//     //     }
-//     //   }
-//     // }
-
-//     // );
-//     if (token != null && token!.isNotEmpty) {
-//       await getSetting(DeviceInfoUtil.deviceInfo!, fcmtoken: token!);
-//     }
-//     // scrollController.addListener(_onScroll);
-//     battery = Battery();
-//     batterySubscription =
-//         battery.onBatteryStateChanged.listen((BatteryState state) {
-//       updateBatteryLevel();
-//     });
-//     updateBatteryLevel();
-//     getBatteryPercentage();
-//     animationController = AnimationController(
-//       vsync: this,
-//       duration: const Duration(seconds: 2),
-//     );
-
-//     reportAnimationController = AnimationController(
-//       vsync: this,
-//       duration: const Duration(seconds: 2),
-//     );
-//     singlrOfferAnimationController = AnimationController(
-//       vsync: this,
-//       duration: const Duration(seconds: 2),
-//     );
-
-//     animationControllerMultipleOffers = AnimationController(
-//       vsync: this,
-//       duration: const Duration(seconds: 2),
-//     );
-//     //  update(
-//     //   ["searchbar"],
-//     // );
-//     _getUserLocation();
-// // Current Location Marker
-//     markers = <MarkerId, Marker>{};
-//     final Uint8List markerIcon =
-//         await getBytesFromAsset('assets/images/marker-loc-pin.png', 80);
-//     final bitmapIcon = BitmapDescriptor.fromBytes(
-//         // const ImageConfiguration(size: Size(4, 4)),
-//         markerIcon);
-//     final Marker marker = Marker(
-//       consumeTapEvents: false,
-//       onTap: () {
-//         googleMapController!.moveCamera(
-//           CameraUpdate.scrollBy(0, -10),
-//         );
-//       },
-//       markerId: const MarkerId("CurrentLocation"),
-//       icon: BitmapDescriptor.defaultMarker,
-//       position: LatLng(locationController.userLocation.value!.latitude!,
-//           locationController.userLocation.value!.longitude!),
-//     );
-
-//     mapMarker.add(markers[const MarkerId("CurrentLocation")] = marker).obs;
-//   }
+  Future<void> changenewmarker({
+    required double lat,
+    required double long,
+    required double secondlatitude,
+    required double secondlongitude,
+  }) async {
+    locations.clear();
+    await getFindChargesListLoctionsList(
+        latitude: lat,
+        longitude: long,
+        pageNumber: pageSize,
+        secondlatitude: secondlatitude,
+        secondlongitude: secondlongitude);
+  }
 
   @override
   void dispose() {
@@ -466,7 +382,7 @@ class FindChargesScreenController extends GetxController
   }
 
   TextEditingController textarea = TextEditingController();
-  TextEditingController searchTextEditingController = TextEditingController();
+  var searchTextEditingController = TextEditingController();
   CustomInfoWindowController customInfoWindowController =
       CustomInfoWindowController();
 
@@ -497,6 +413,16 @@ class FindChargesScreenController extends GetxController
   bool get isMapViewVisible => _isMapViewVisible.value;
   set isMapViewVisible(bool value) => _isMapViewVisible.value = value;
 
+  // For List Visiblity
+  final _isListViewVisible = true.obs;
+  bool get isListViewVisible => _isListViewVisible.value;
+  set isListViewVisible(bool value) => _isListViewVisible.value = value;
+
+  //For Map List View
+  final _isMapListViewVisible = true.obs;
+  bool get isMapListViewVisible => _isMapListViewVisible.value;
+  set isMapListViewVisible(bool value) => _isMapListViewVisible.value = value;
+
   GoogleMapController? googleMapController;
   Rx<Location?> currentLocation = Rx<Location?>(null);
 
@@ -509,27 +435,84 @@ class FindChargesScreenController extends GetxController
 
   currentLoctionOnTapFunctions() async {
     // isMapViewVisible = !isMapViewVisible;
-
-    await Future.delayed(Duration(milliseconds: 500));
+    placedetails = Rx(LatLng(0, 0));
+    await Future.delayed(const Duration(milliseconds: 500));
 
     // Move the camera to the current location
     if (!isMapViewVisible) {
+      searchTextEditingController.clear();
+      selectedaddress.value = "";
+
       if (googleMapController != null && currentLocationes != null) {
-        googleMapController!.animateCamera(
+        locations.clear();
+
+        await getFindChargesListLoctionsList(
+          latitude: locationController.latitude.value!,
+          longitude: locationController.longitude.value!,
+          secondlatitude: 0,
+          secondlongitude: 0,
+          // showMarkerMode:
+          //     settingController.getSettingValues.setting?.showMarkerMode == false
+          //         ? 0
+          //         : 1,
+          pageNumber: pageSize,
+        );
+        mapMarker.remove(
+          markers[const MarkerId("CurrentLocation")],
+        );
+
+        markers = <MarkerId, Marker>{};
+        final Uint8List markerIcon = await getBytesFromAsset(
+          'assets/images/current-location.png',
+          100,
+        );
+        final bitmapIcon = BitmapDescriptor.fromBytes(
+            // const ImageConfiguration(size: Size(4, 4)),
+            markerIcon);
+        final Marker marker = Marker(
+          draggable: false,
+          consumeTapEvents: true,
+          markerId: const MarkerId("CurrentLocation"),
+          icon: bitmapIcon,
+          position: LatLng(locationController.latitude.value!,
+              locationController.longitude.value!),
+        );
+
+        mapMarker.add(markers[const MarkerId("CurrentLocation")] = marker).obs;
+        // googleMapController!.moveCamera(
+        //   CameraUpdate.scrollBy(-40, -70),
+        // );
+        customInfoWindowController.googleMapController!.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
-              tilt: 20,
-              target: LatLng(
-                currentLocationes!.latitude!,
-                currentLocationes!.longitude!,
-              ),
-              zoom: 15.0,
-            ),
+                target: LatLng(
+                  locationController.latitude.value! - 0.007,
+                  locationController.longitude.value! - 0.00001,
+                ),
+                zoom: 15),
           ),
         );
       }
     } else {
       scrollController.jumpTo(0);
+      if (searchTextEditingController.value.text.isNotEmpty) {
+        locations.clear();
+
+        await getFindChargesListLoctionsList(
+          latitude: locationController.latitude.value!,
+          longitude: locationController.longitude.value!,
+          secondlatitude: 0,
+          secondlongitude: 0,
+          // showMarkerMode:
+          //     settingController.getSettingValues.setting?.showMarkerMode == false
+          //         ? 0
+          //         : 1,
+          pageNumber: pageSize,
+        );
+        selectedaddress.value = "";
+
+        searchTextEditingController.clear();
+      }
     }
   }
 
@@ -574,7 +557,6 @@ class FindChargesScreenController extends GetxController
     }
   }
 
-
   //=====================================API==========================================
 
 // ++++++++++++++++++++++++++++++++++++ 1 Page ++++++++++++++++++++++++++++++++++++++++
@@ -586,6 +568,11 @@ class FindChargesScreenController extends GetxController
   set findChargesData(GetLocationsResponceDto value) =>
       _findChargesData.value = value;
 
+  final _findChargesDataAll = LL.GetLocalLocationsResponceDto().obs;
+  LL.GetLocalLocationsResponceDto get findChargesDataAll =>
+      _findChargesDataAll.value;
+  set findChargesDataAll(LL.GetLocalLocationsResponceDto value) =>
+      _findChargesDataAll.value = value;
   var isLoading = true.obs;
   var isMoreLoading = true.obs;
   var isSearchempty = false.obs;
@@ -596,34 +583,45 @@ class FindChargesScreenController extends GetxController
   RxList<Location> locations = <Location>[].obs;
   final ScrollController scrollController = ScrollController();
 
-  Future<void> getFindChargesListLoctionsListForMap({
-    required double latitude,
-    required double longitude,
-    // required int showMarkerMode,
-    int? pageNumber,
-  }) async {
+  Future<void> getFindChargesListLoctionsListForMap(
+      {required double lat, required double long}) async {
     try {
       // markers = <MarkerId, Marker>{};
       // isLoading.value = true;
-      findChargesData = await _apiRepostory.findChargesLoctionsList(
-        latitude,
-        longitude,
-        pageNumber ?? 0,
-        // showMarkerMode,
-      ); 
-      for (var i in findChargesData.locations!) {
-        log("Location lat is ${i.latitude} and long is ${i.longitude}");
+      findChargesDataAll = await _apiRepostory.findChargesLoctionsListAll(
+          latitude: lat, longitude: long, pageNumber: mapPageSize);
+      for (var i in findChargesDataAll.locations!) {
         if (!markers.containsKey(i.locationId)) {
           final Uint8List markerIcon = i.showLocation == 1
-              ? await getBytesFromAsset('assets/images/charger-loc-pin.png', 80)
-              : await getBytesFromAsset('assets/images/marker-loc-pin.png', 80);
+              ? await getBytesFromAsset(
+                  'assets/images/charger-loc-pin.png',
+                  80,
+                )
+              : await getBytesFromAsset(
+                  'assets/images/marker-loc-pin.png',
+                  80,
+                );
           final bitmapIcon = BitmapDescriptor.fromBytes(
               // const ImageConfiguration(size: Size(4, 4)),
               markerIcon);
           final Marker marker1 = Marker(
             onTap: () {
-              googleMapController!.moveCamera(
-                CameraUpdate.scrollBy(0, -10),
+              googleMapController!.animateCamera(
+                CameraUpdate.newCameraPosition(
+                  CameraPosition(
+                    target: LatLng(i.latitude, i.longitude),
+                    zoom: 15,
+                  ),
+                ),
+              );
+              // googleMapController!.moveCamera(
+              //   CameraUpdate.scrollBy(0, -10),
+              // );
+              changenewmarker(
+                lat: locationController.latitude.value!,
+                long: locationController.longitude.value!,
+                secondlatitude: i.latitude,
+                secondlongitude: i.longitude,
               );
               customInfoWindowController.addInfoWindow!(
                 Column(
@@ -638,7 +636,7 @@ class FindChargesScreenController extends GetxController
                         height: double.infinity,
                         child: Center(
                           child: Text(
-                            i.brandName!,
+                            i.brandName,
                             style: const TextStyle(
                               fontSize: 12.0,
                               fontWeight: FontWeight.bold,
@@ -658,34 +656,35 @@ class FindChargesScreenController extends GetxController
                     ),
                   ],
                 ),
-                LatLng(i.latitude!, i.longitude!),
+                LatLng(i.latitude, i.longitude),
               );
             },
-            markerId: MarkerId(i.locationId!.toString()),
+            markerId: MarkerId(i.locationId.toString()),
             icon: bitmapIcon,
-            position: LatLng(i.latitude!, i.longitude!),
+            position: LatLng(i.latitude, i.longitude),
             //infoWindow: InfoWindow(title: '${i.brandName}')
           );
 
           mapMarker
-              .add(markers[MarkerId(i.locationId!.toString())] = marker1)
+              .add(markers[MarkerId(i.locationId.toString())] = marker1)
               .obs;
         }
       }
       mapPageSize++;
 
       // locations.addAll(findChargesData.locations!);
-      debugPrint('>>>> [DEBUG] markers map is  ${markers.values.length}');
       // isLoading.value = false;
-      Future.delayed(Duration(seconds: 10), () async {
+      Future.delayed(Duration(seconds: 5), () async {
         await getFindChargesListLoctionsListForMap(
-          latitude: locationController.latitude.value ?? 0.0,
-          longitude: locationController.longitude.value ?? 0.0,
-          // showMarkerMode:
-          //     settingController.getSettingValues.setting?.showMarkerMode == false
-          //         ? 0
-          //         : 1,
-          pageNumber: mapPageSize,
+          lat: lat,
+          long: long,
+          //   latitude: locationController.latitude.value ?? 0.0,
+          // longitude: locationController.longitude.value ?? 0.0,
+          // // showMarkerMode:
+          // //     settingController.getSettingValues.setting?.showMarkerMode == false
+          // //         ? 0
+          // //         : 1,
+          // pageNumber: mapPageSize,
         );
       });
     } on ErrorResponse catch (e) {
@@ -695,7 +694,7 @@ class FindChargesScreenController extends GetxController
       );
 
       Logger().d(e.error?.detail ?? '');
-      // isLoading.value = false;
+      isLoading.value = false;
     } catch (e) {
       Get.back();
       Logger().d(e);
@@ -706,8 +705,11 @@ class FindChargesScreenController extends GetxController
   Future<void> getFindChargesListLoctionsList({
     required double latitude,
     required double longitude,
+
     // required int showMarkerMode,
-    int? pageNumber,
+    dynamic pageNumber,
+    required double secondlatitude,
+    required double secondlongitude,
   }) async {
     try {
       // markers = <MarkerId, Marker>{};
@@ -715,9 +717,12 @@ class FindChargesScreenController extends GetxController
 
       isLoading.value = true;
       findChargesData = await _apiRepostory.findChargesLoctionsList(
-        latitude,
-        longitude,
-        pageNumber ?? 0,
+        latitude: latitude,
+        longitude: longitude,
+        secondlatitude: secondlatitude,
+        secondlongitude: secondlongitude,
+        pageNumber: pageNumber ?? 0,
+
         // showMarkerMode,
       );
       locations.addAll(findChargesData.locations!);
@@ -741,15 +746,16 @@ class FindChargesScreenController extends GetxController
     }
   }
 
-
   // Function to load more data when scrolling reaches the end
 
   Future<void> loadMoreData() async {
-    if (searchTextEditingController.text.isEmpty) {
+    if (searchTextEditingController.value.text.isEmpty) {
       pageSize++;
       isMoreLoading.value = true;
       await getFindChargesListLoctionsList(
         latitude: locationController.latitude.value ?? 0.0,
+        secondlatitude: placedetails.value.latitude,
+        secondlongitude: placedetails.value.longitude,
         longitude: locationController.longitude.value ?? 0.0,
         pageNumber: pageSize,
       );
@@ -768,7 +774,7 @@ class FindChargesScreenController extends GetxController
   Future<void> refreshFindChargesList(
       {required double latitude,
       required double longitude,
-      int? pageNumber}) async {
+      dynamic pageNumber}) async {
     try {
       isLoading.value = true;
 
@@ -777,10 +783,11 @@ class FindChargesScreenController extends GetxController
       searchResults.clear();
 
       findChargesData = await _apiRepostory.findChargesLoctionsList(
-        latitude,
-        longitude,
-        pageNumber ?? 0,
-      );
+          latitude: latitude,
+          longitude: longitude,
+          pageNumber: pageNumber ?? 0,
+          secondlatitude: placedetails.value.latitude,
+          secondlongitude: placedetails.value.longitude);
 
       locations.addAll(findChargesData.locations!);
       searchResults.addAll(locations);
@@ -805,7 +812,7 @@ class FindChargesScreenController extends GetxController
       {required double latitude,
       required int id,
       required double longitude,
-      int? pageNumber}) async {
+      dynamic pageNumber}) async {
     try {
       isLoading.value = true;
 
@@ -845,8 +852,7 @@ class FindChargesScreenController extends GetxController
 
   ///findChargesLoctionsSearchData
   RxList<Location> searchResults = <Location>[].obs;
-
-  Future<void> getFindChargesListLoctionSearchsList({
+  FutureOr<void> getFindChargesListLoctionSearchsList({
     required double latitude,
     required double longitude,
     required int pageNumber,
@@ -863,15 +869,22 @@ class FindChargesScreenController extends GetxController
         0,
         seacrhValue!,
       );
-      searchResults.addAll(findChargesData.locations!);
-      print("Search Length is ${searchResults.length}");
+      // var data = json.decode(findChargesData.locations.toString());
 
+      // predictionList = [];
+      // data['predictions'].forEach(
+      //     (prediction) => predictionList.add(Prediction.fromJson(prediction)));
+
+      // print("Search Length is ${searchResults.length}");
+      searchResults.addAll(findChargesData.locations!);
       if (searchResults.isEmpty) {
         isSearchempty.value = true;
       } else {
         isSearchempty.value = false;
       }
+
       isLoading.value = false;
+      // return predictionList;
     } on ErrorResponse catch (e) {
       Get.back();
       debugPrint(
@@ -885,10 +898,15 @@ class FindChargesScreenController extends GetxController
       Logger().d(e);
       isLoading.value = false;
     }
+    // return <Prediction>[];
   }
 
   void setIsLoading(bool value) {
     isLoading.value = value;
+  }
+
+  Future<List<Location>> getSuggestions(pattern) async {
+    return searchResults; // Replace with your actual suggestions
   }
 
 // ++++++++++++++++++++++++++++++++++ 2 Page ++++++++++++++++++++++++++++++++++++++++++
@@ -1056,7 +1074,7 @@ class FindChargesScreenController extends GetxController
       _isVisibleMultipleOffers.value = value;
 
   late final AnimationController animationControllerMultipleOffers;
-
+  Rx<String> selectedaddress = "".obs;
   RxBool isOpenedMultipleOffers = false.obs;
 
   Future<void> getMultipleOfferCard({
@@ -1106,4 +1124,113 @@ class FindChargesScreenController extends GetxController
       Get.snackbar('Error', 'Unsupported platform');
     }
   }
+
+  /// For Fetch Location Suggestions
+
+  ws.GoogleMapsPlaces places =
+      ws.GoogleMapsPlaces(apiKey: 'AIzaSyCpL_AnZNobvqT2VnkL2lG7EjoPGD0h348');
+  Rx<LatLng> placedetails = const LatLng(0, 0).obs;
+  final _locationsuggestionsData = LocationSuggestion().obs;
+  LocationSuggestion get locationSuggestionsData =>
+      _locationsuggestionsData.value;
+  set locationSuggestionsData(LocationSuggestion value) =>
+      _locationsuggestionsData.value = value;
+  Future<LatLng> getPlaceLatLng(String placeId, BuildContext context) async {
+    locationSuggestionsData.predictions!.clear();
+    // searchResults.clear();
+    FocusScope.of(context).unfocus();
+
+    final placeDetails = await places.getDetailsByPlaceId(placeId);
+
+    if (placeDetails.hasNoResults) {
+      return LatLng(placeDetails.result.geometry!.location.lat,
+          placeDetails.result.geometry!.location.lng);
+    }
+
+    locations.clear();
+    isLoading.value = true;
+    selectedaddress.value = placeDetails.result.name;
+    searchTextEditingController.text = placeDetails.result.name;
+
+    if (ismapCreated.value) {
+      // googleMapController!.moveCamera(
+      //   CameraUpdate.newLatLng(
+      //     LatLng(placeDetails.result.geometry!.location.lat,
+      //         placeDetails.result.geometry!.location.lng),
+      //   ),
+      // );
+    }
+
+    getFindChargesListLoctionsList(
+      latitude: locationController.latitude.value!,
+      longitude: locationController.longitude.value!,
+      secondlatitude: placeDetails.result.geometry!.location.lat,
+      secondlongitude: placeDetails.result.geometry!.location.lng,
+    );
+
+    await getFindChargesListLoctionsListForMap(
+        long: placeDetails.result.geometry!.location.lng,
+        lat: placeDetails.result.geometry!.location.lat);
+
+    isListViewVisible = true;
+    isMapListViewVisible = true;
+    placedetails = Rx(LatLng(
+      placeDetails.result.geometry!.location.lat,
+      placeDetails.result.geometry!.location.lng,
+    ));
+    update();
+
+    googleMapController!
+        .moveCamera(
+          CameraUpdate.newLatLng(
+            LatLng(placeDetails.result.geometry!.location.lat,
+                placeDetails.result.geometry!.location.lng),
+          ),
+        )
+        .obs;
+
+    return LatLng(placeDetails.result.geometry!.location.lat,
+        placeDetails.result.geometry!.location.lng);
+  }
+
+  Future<void> fetchSuggestions(String query) async {
+    isLoading.value = true;
+    final request =
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&location=${locationController.latitude},${locationController.longitude}&key=AIzaSyCpL_AnZNobvqT2VnkL2lG7EjoPGD0h348';
+    final response = await client.get(
+      Uri.parse(request),
+    );
+
+    if (response.statusCode == 200) {
+      final result = json.decode(response.body);
+      if (result['status'] == 'OK') {
+        locationSuggestionsData = LocationSuggestion.fromJson(result);
+        isLoading.value = false;
+        // return LocationSuggestion.fromJson(result);
+      }
+    } else {
+      isLoading.value = false;
+
+      throw Exception('Failed to fetch suggestion');
+    }
+    isLoading.value = false;
+
+    throw UnimplementedError();
+  }
 }
+
+// class Place with ClusterItem {
+//   final String name;
+//   final bool isClosed;
+//   final LatLng latLng;
+
+//   Place({required this.name, required this.latLng, this.isClosed = false});
+
+//   @override
+//   String toString() {
+//     return 'Place $name (closed : $isClosed)';
+//   }
+
+//   @override
+//   LatLng get location => latLng;
+// }

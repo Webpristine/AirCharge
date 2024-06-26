@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:aircharge/app/core/theme/buttons.dart';
 import 'package:aircharge/app/core/theme/colors.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
@@ -48,7 +50,11 @@ class ReportView extends GetView<FindChargesScreenController> {
               color: AppColors.white,
               borderRadius: BorderRadius.circular(10.sp),
             ),
-            padding: EdgeInsets.only(left: 8.w, right: 13.w, bottom: 10.h),
+            padding: EdgeInsets.only(
+              left: 8.w,
+              right: 13.w,
+              bottom: 10.h,
+            ),
             child: Focus(
               key: controller.focusKey,
               child: SingleChildScrollView(

@@ -2,6 +2,7 @@ import 'package:aircharge/app/core/theme/colors.dart';
 import 'package:aircharge/app/core/theme/styles.dart';
 import 'package:aircharge/app/core/utils/device_info_util.dart';
 import 'package:aircharge/app/modules/find_charges_screen/controllers/find_charges_screen_controller.dart';
+import 'package:aircharge/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -93,10 +94,12 @@ class SettingScreenView extends GetView<SettingScreenController> {
                                 controller.updateLowPowerNotifications(
                                     currentSetting);
                               }
+
                               // await  controller
                               //       .findChargesScreenController
                               //       .getSetting(DeviceInfoUtil.deviceId);
                               await controller.postSetting();
+                              prefs!.setBool("lowpower", value);
                             },
                             activeColor: AppColors.settingScreenSwitchOnColor,
                           ),
@@ -293,6 +296,7 @@ class SettingScreenView extends GetView<SettingScreenController> {
                               value: controller.sliderValue.value,
                               onChangeEnd: (value) async {
                                 await controller.postSetting();
+                                prefs!.setInt("battey", value.toInt());
                               },
                               // onChanged: (value) {
                               //   settingScreenController
@@ -628,6 +632,16 @@ class SettingScreenView extends GetView<SettingScreenController> {
                                       longitude: controller.locationController
                                               .longitude.value ??
                                           0.0,
+                                      secondlatitude: controller
+                                          .findChargesScreenController
+                                          .placedetails
+                                          .value
+                                          .latitude,
+                                      secondlongitude: controller
+                                          .findChargesScreenController
+                                          .placedetails
+                                          .value
+                                          .longitude,
                                       // showMarkerMode: 1,
                                     )
                                   : controller.findChargesScreenController
@@ -638,6 +652,16 @@ class SettingScreenView extends GetView<SettingScreenController> {
                                       longitude: controller.locationController
                                               .longitude.value ??
                                           0.0,
+                                      secondlatitude: controller
+                                          .findChargesScreenController
+                                          .placedetails
+                                          .value
+                                          .latitude,
+                                      secondlongitude: controller
+                                          .findChargesScreenController
+                                          .placedetails
+                                          .value
+                                          .longitude,
                                       // showMarkerMode: 0,
                                     );
                             },

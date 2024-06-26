@@ -31,7 +31,7 @@ class SplashScareenController extends GetxController
   _animateText() async {
     // Timer(const Duration(seconds: 2),(){
        Future.delayed(
-        Duration(milliseconds: 500)); // Delay for initial splash screen view
+        Duration(milliseconds: 500),); // Delay for initial splash screen view
     textOpacity.value = 1.0; 
     Timer(const Duration(seconds: 2), () {
       Get.offAll(

@@ -11,8 +11,8 @@ String locationsDetailsResponceDtoToJson(LocationsDetailsResponceDto data) =>
     json.encode(data.toJson());
 
 class LocationsDetailsResponceDto {
-  int? code;
-  String? message;
+  dynamic code;
+  dynamic message;
   Location? location;
 
   LocationsDetailsResponceDto({
@@ -38,30 +38,31 @@ class LocationsDetailsResponceDto {
 }
 
 class Location {
-  int? locationId;
-  String? brandName;
-  String? brandLogo;
-  String? locationImage;
-  String? addressLine1;
-  String? addressLine2;
-  String? addressLine3;
-  String? town;
-  String? county;
-  String? postcode;
-  String? country;
-  String? googlePlacesId;
-  String? businessStatus;
+  dynamic locationId;
+  dynamic brandName;
+  dynamic brandLogo;
+  dynamic friendlyname;
+  dynamic locationImage;
+  dynamic addressLine1;
+  dynamic addressLine2;
+  dynamic addressLine3;
+  dynamic town;
+  dynamic county;
+  dynamic postcode;
+  dynamic country;
+  dynamic googlePlacesId;
+  dynamic businessStatus;
   dynamic latitude;
   dynamic longitude;
-  String? distance;
-  int? ratingScore;
-  int? isOtherButton;
-  String? buttonText;
-  String? buttonLink;
-  int? isOfferButton;
-  int? isOfferMultiple;
-  int? offerId;
-  int? brandId;
+  dynamic distance;
+  dynamic ratingScore;
+  dynamic isOtherButton;
+  dynamic buttonText;
+  dynamic buttonLink;
+  dynamic isOfferButton;
+  dynamic isOfferMultiple;
+  dynamic offerId;
+  dynamic brandId;
 
   Location({
     this.locationId,
@@ -72,6 +73,7 @@ class Location {
     this.addressLine2,
     this.addressLine3,
     this.town,
+    this.friendlyname,
     this.county,
     this.postcode,
     this.country,
@@ -96,6 +98,7 @@ class Location {
         brandLogo: json["brand_logo"],
         locationImage: json["location_image"],
         addressLine1: json["address_line1"],
+        friendlyname: json["friendly_name"],
         addressLine2: json["address_line2"],
         addressLine3: json["address_line3"],
         town: json["town"],

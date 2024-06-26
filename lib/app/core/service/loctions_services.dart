@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:aircharge/app/core/service/loctions_controller.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:fl_location/fl_location.dart' as fl;
+// import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:location/location.dart';
@@ -29,7 +30,7 @@ class LocationService {
 
       return Future.value(false);
     } else {
-      bool isEnabled = await Geolocator.isLocationServiceEnabled();
+      bool isEnabled = await fl.FlLocation.isLocationServicesEnabled;
       if (isEnabled) {
         return Future.value(true);
       }
@@ -66,18 +67,19 @@ class LocationService {
 
       return Future.value(true);
     } else {
-      LocationPermission status = await Geolocator.checkPermission();
+      fl.LocationPermission status =
+          await fl.FlLocation.checkLocationPermission();
 
-      if (status == LocationPermission.denied) {
-        status = await Geolocator.requestPermission();
-        if (status == LocationPermission.always) {
+      if (status == fl.LocationPermission.denied) {
+        status = await fl.FlLocation.requestLocationPermission();
+        if (status == fl.LocationPermission.always) {
           return true;
-        } else if (status == LocationPermission.whileInUse) {
+        } else if (status == fl.LocationPermission.whileInUse) {
           return true;
         }
         return false;
       }
-      if (status == LocationPermission.deniedForever) {
+      if (status == fl.LocationPermission.deniedForever) {
         Get.snackbar("Permission Needed",
             "We use permission to get your location in order to give your service",
             onTap: (snack) async {
@@ -107,7 +109,7 @@ class LocationService {
       controller.updateIsAccessingLocation(false);
       return;
     }
-    final position = await Geolocator.getCurrentPosition();
+    final position = await fl.FlLocation.getLocation();
 
     print("Lat long is ${position.latitude}");
 
@@ -116,7 +118,7 @@ class LocationService {
 
       controller.updateUserLocation(lat: data.latitude!, long: data.longitude!);
     } else {
-      final position = await Geolocator.getCurrentPosition();
+      final position = await fl.FlLocation.getLocation();
       controller.updateUserLocation(
           lat: position.latitude, long: position.longitude);
     }

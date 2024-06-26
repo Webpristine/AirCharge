@@ -23,7 +23,7 @@ class CommanListTile extends GetView<FindChargesScreenController> {
       color: AppColors.white,
       height: Get.height * 0.08.h,
       padding: EdgeInsets.only(
-          top: 4.0.h, left: 10.0.w, right: 10.0.w, bottom: 4.0.h),
+          top: 2.0.h, left: 10.0.w, right: 10.0.w, bottom: 2.0.h),
       child: Row(
         children: [
           CircleAvatar(

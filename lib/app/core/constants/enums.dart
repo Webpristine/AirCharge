@@ -1,9 +1,9 @@
-enum FontFamily { hero, meta, inter}
-
+enum FontFamily { hero, meta, inter }
 
 enum ApiVersion {
   v1,
 }
+
 enum WidgetState {
   initial,
   loading,

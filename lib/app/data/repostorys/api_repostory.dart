@@ -4,6 +4,7 @@ import 'package:aircharge/app/data/request_dto/battery-percentage_request.dart';
 import 'package:aircharge/app/data/request_dto/report_request.dart';
 import 'package:aircharge/app/data/request_dto/setting-request.dart';
 import 'package:aircharge/app/data/response_dto/battery_percentage_response.dart';
+import 'package:aircharge/app/data/response_dto/local_locations_response.dart';
 import 'package:aircharge/app/data/response_dto/loctions_details_response.dart';
 import 'package:aircharge/app/data/response_dto/loctions_response.dart';
 import 'package:aircharge/app/data/response_dto/multiple_offerscard_response.dart';
@@ -69,8 +70,13 @@ class ApiRepostory {
 //  ++++++++++++++++++++++++++++ Second Page +++++++++++++++++++++++++++++++
 
   //MARK: findChargesLoctionsList
-  Future<GetLocationsResponceDto> findChargesLoctionsList(
-      double latitude, double longitude, int pageNumber
+  Future<GetLocationsResponceDto> findChargesLoctionsList({
+    required double latitude,
+    required double longitude,
+    required int pageNumber,
+    required double secondlatitude,
+    required double secondlongitude,
+  }
       // int dataLimit,
       // int showMarkerMode,
       // int pageNumber,
@@ -81,13 +87,41 @@ class ApiRepostory {
       // dynamic seacrValue,
       ) async {
     final response = await apiControllerV1.get(
-        path:
-            ApiEndPoints.findChargesLoctionsList(latitude, longitude, pageNumber
-                // dataLimit,
-                // showMarkerMode,
-                // seacrValue
-                ));
+        path: ApiEndPoints.findChargesLoctionsList(
+            latitude: latitude,
+            longitude: longitude,
+            pageNumber: pageNumber,
+            secondlatitude: secondlatitude,
+            secondlongitude: secondlongitude
+            // dataLimit,
+            // showMarkerMode,
+            // seacrValue
+            ));
     return GetLocationsResponceDto.fromJson(response);
+  }
+
+  Future<GetLocalLocationsResponceDto> findChargesLoctionsListAll({
+    required double latitude,
+    required double longitude,
+    required int pageNumber,
+  }
+      // int dataLimit,
+      // int showMarkerMode,
+      // int pageNumber,
+      // [int? page,
+      // int? pageSize,
+      // int? dynamicItemsPerPage,
+      // ]
+      // dynamic seacrValue,
+      ) async {
+    final response = await apiControllerV1.get(
+        path: ApiEndPoints.findChargesLoctionsListAll(
+      latitude: latitude, longitude: longitude, pageNumber: pageNumber,
+      // dataLimit,
+      // showMarkerMode,
+      // seacrValue
+    ));
+    return GetLocalLocationsResponceDto.fromJson(response);
   }
 
   Future<GetLocationsResponceDto> findChargesLoctionSearchsList(

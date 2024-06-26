@@ -8,9 +8,6 @@ class LocationController extends GetxController {
   final Rx<double?> latitude = Rx<double?>(null);
   final Rx<double?> longitude = Rx<double?>(null);
 
-  // Placemark _pickPlaceMark = Placemark();
-  // List<Prediction> prediction = [];
-
   void updateIsAccessingLocation(bool b) {
     isAccessingLocation.value = b;
   }
